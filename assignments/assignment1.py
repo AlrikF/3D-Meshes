@@ -59,7 +59,7 @@ def create_half_edge(mesh, vertices_list ,half_edge_list, faces_list):
         triangle= mesh.triangles[i]
         faces_list[f"f{i}"]=Face_Node(f"f{i}", None)
         
-        print("Triangle:",triangle)
+        # print("Triangle:",triangle)
         
         for j in range(3):
             v_name=None
@@ -103,6 +103,8 @@ def plot_half_edge(new_half_edge_list, new_vertices_list):
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
 
+
+
     # Iterate through half edges and plot them
     for e_name in new_half_edge_list:
         org, end = new_half_edge_list[e_name].origin, new_half_edge_list[e_name].end_vertex
@@ -117,6 +119,7 @@ def plot_half_edge(new_half_edge_list, new_vertices_list):
 
     # Annotating vertices
     for vertex_name in vertices_list:
+        ax.scatter(vertices_list[vertex_name].coordinates[0], vertices_list[vertex_name].coordinates[1], vertices_list[vertex_name].coordinates[2], color='g')
         ax.text(vertices_list[vertex_name].coordinates[0], vertices_list[vertex_name].coordinates[1], vertices_list[vertex_name].coordinates[2], vertex_name)
 
         
@@ -127,11 +130,12 @@ def plot_half_edge(new_half_edge_list, new_vertices_list):
 
     plt.show()
 
-def compute_odd_vertices(mesh,half_edge_list,vertices_list,new_vertices_list):
+def compute_odd_vertices(mesh,half_edge_list,vertices_list,new_vertices_list, debug=False):
     visited=set([])
     for e_name in half_edge_list:
         if e_name not in visited:
-            print(e_name,visited)
+            if debug:
+                print(e_name,visited)
             twin_e_name=half_edge_list[e_name].twin_name
             visited.add(e_name)
             visited.add(twin_e_name)
@@ -153,7 +157,7 @@ def compute_odd_vertices(mesh,half_edge_list,vertices_list,new_vertices_list):
 
 
 
-def compute_even_vertices(mesh,half_edge_list,vertices_list, new_vertices_list):
+def compute_even_vertices(mesh,half_edge_list,vertices_list, new_vertices_list, debug=False):
     
     for vertex_name in vertices_list:
         neighbours = set([])
@@ -163,8 +167,8 @@ def compute_even_vertices(mesh,half_edge_list,vertices_list, new_vertices_list):
         sum_neighbours = 0
         for neighbour in neighbours:
             sum_neighbours+= vertices_list[neighbour].coordinates
-        
-        print("Sum neighbours :", sum_neighbours)
+        if debug :
+            print("Sum neighbours :", sum_neighbours)
 
         beta=3/16.0
         if len(neighbours)>3:
@@ -203,7 +207,7 @@ def create_new_faces(new_face_list,new_half_edge_list, triangle):
 
 
 
-def compute_new_faces(faces_list, new_vertices_list,new_half_edge_list,new_face_list):
+def compute_new_faces(faces_list, half_edge_list, new_vertices_list,new_half_edge_list,new_face_list, debug=False):
     
     for f_name in faces_list:
         he_name= faces_list[f_name].half_edge
@@ -220,25 +224,32 @@ def compute_new_faces(faces_list, new_vertices_list,new_half_edge_list,new_face_
 
         origin_vertex3 = half_edge_list[next_he_name].origin    
         end_vertex3 = half_edge_list[next_he_name].end_vertex
-        child_odd_vertex3 = half_edge_list[he_name].child_odd_vertex
+        child_odd_vertex3 = half_edge_list[next_he_name].child_odd_vertex
 
-        # print("Creating 4 new faces")
-        # print(new_face_list)
-        print(origin_vertex1,child_odd_vertex1,child_odd_vertex2)
-        print(origin_vertex2,child_odd_vertex3,child_odd_vertex2)
-        print(origin_vertex3,child_odd_vertex1,child_odd_vertex3)
-        print(child_odd_vertex3,child_odd_vertex1,child_odd_vertex2)
-
+        if debug:
+            print("Creating 4 new faces")
+            print([origin_vertex1,child_odd_vertex1,child_odd_vertex2])
+            print([origin_vertex2,child_odd_vertex2,child_odd_vertex3])
+            print([origin_vertex3,child_odd_vertex3,child_odd_vertex1])
+            print([child_odd_vertex1,child_odd_vertex3,child_odd_vertex2])
 
         create_new_faces(new_face_list,new_half_edge_list,[origin_vertex1,child_odd_vertex1,child_odd_vertex2])
-        create_new_faces(new_face_list,new_half_edge_list,[origin_vertex2,child_odd_vertex3,child_odd_vertex2])
-        create_new_faces(new_face_list,new_half_edge_list,[origin_vertex3,child_odd_vertex1,child_odd_vertex3])
-        create_new_faces(new_face_list,new_half_edge_list,[child_odd_vertex3,child_odd_vertex1,child_odd_vertex2])
+        create_new_faces(new_face_list,new_half_edge_list,[origin_vertex2,child_odd_vertex2,child_odd_vertex3])
+        create_new_faces(new_face_list,new_half_edge_list,[origin_vertex3,child_odd_vertex3,child_odd_vertex1])
+        create_new_faces(new_face_list,new_half_edge_list,[child_odd_vertex1,child_odd_vertex3,child_odd_vertex2])
         # print(new_face_list)
 
+def connect_twin_half_edges(new_half_edge_list):
+    for he_name in new_half_edge_list:
+        if new_half_edge_list[he_name].twin_name is None:
+            for twin_he_name in new_half_edge_list:
+                if (new_half_edge_list[twin_he_name].origin == new_half_edge_list[he_name].end_vertex and
+                    new_half_edge_list[twin_he_name].end_vertex == new_half_edge_list[he_name].origin):
+                    new_half_edge_list[he_name].twin_name = twin_he_name
+                    new_half_edge_list[twin_he_name].twin_name = he_name 
+                    break
 
-
-def subdivision_loop(mesh, vertices_list, half_edge_list, faces_list, iterations=1):
+def subdivision_loop(mesh, vertices_list, half_edge_list, faces_list, iterations=1, debug =True):
     """
     Apply Loop subdivision to the input mesh for the specified number of iterations.
     :param mesh: input mesh
@@ -248,32 +259,36 @@ def subdivision_loop(mesh, vertices_list, half_edge_list, faces_list, iterations
     new_vertices_list = copy.deepcopy(vertices_list)
     new_half_edge_list = {}
     new_face_list = {}
-    for _ in range(iterations):
-        # new_half_edge_list= copy.deepcopy(half_edge_list)
-        new_vertices_list = copy.deepcopy(vertices_list)
+    for iter in range(iterations):
         new_half_edge_list = {}
         new_face_list = {}
-        # Step 1: Compute updated positions for existing vertices
+        # new_half_edge_list= copy.deepcopy(half_edge_list)
+        new_vertices_list = copy.deepcopy(vertices_list)
+        print(f"Iteration {iter}")
+        print(half_edge_list)
+
 
         compute_odd_vertices(mesh,half_edge_list=half_edge_list,vertices_list=vertices_list,new_vertices_list=new_vertices_list )
       
         compute_even_vertices(mesh,half_edge_list=half_edge_list,vertices_list=vertices_list,new_vertices_list=new_vertices_list)
         
-        compute_new_faces(faces_list, new_vertices_list,new_half_edge_list,new_face_list )
+        compute_new_faces(faces_list,half_edge_list, new_vertices_list,new_half_edge_list,new_face_list )
         
-        # Step 4: Connect half-edges
-        for he_name in new_half_edge_list:
-            if new_half_edge_list[he_name].twin_name is None:
-                for twin_he_name in new_half_edge_list:
-                    if (new_half_edge_list[twin_he_name].origin == new_half_edge_list[he_name].end_vertex and
-                        new_half_edge_list[twin_he_name].end_vertex == new_half_edge_list[he_name].origin):
-                        new_half_edge_list[he_name].twin_name = twin_he_name
-                        new_half_edge_list[twin_he_name].twin_name = he_name 
-                        break
+        connect_twin_half_edges(new_half_edge_list=new_half_edge_list)
+                
         
         half_edge_list= copy.deepcopy(new_half_edge_list)
         faces_list = copy.deepcopy(new_face_list)
         vertices_list = copy.deepcopy(new_vertices_list)
+
+        print(f"End of iteration {iter}")
+        print("\n Half Edge List ::\n", half_edge_list)
+
+        print(" \n Faces List : \n ", faces_list)
+
+        print("\n Vertices List \n",vertices_list)
+
+
 
     print(len(new_half_edge_list),len(new_vertices_list),len(new_face_list)) 
     plot_half_edge(new_half_edge_list,new_vertices_list)
@@ -302,33 +317,40 @@ def simplify_quadric_error(mesh, face_count=1):
 
 
 
-def write_obj_file(vertices_list, face_list, filename):
-    with open(filename, 'w') as obj_file:
-        # Write vertex coordinates
-        for vertex_name, vertex_data in vertices_list.items():
-            obj_file.write(f"v {' '.join(map(str, vertex_data.coordinates))}\n")
+def create_trimesh(v_list, f_list, he_list):
+    vertices = []
+    faces = []
+    # Convert vertices
+    for vertex in v_list:
+        vertices.append(v_list[vertex].coordinates)
 
-        # Write faces
-        for face_node in face_list.values():
-            half_edge = new_half_edge_list[face_node.half_edge]
-            face_vertices = [half_edge.origin]
-            next_edge = half_edge.next
-            while next_edge != face_node.half_edge:
-                half_edge = new_half_edge_list[next_edge]
-                face_vertices.append(half_edge.origin)
-                next_edge = half_edge.next
-            obj_file.write("f " + " ".join(face_vertices) + "\n")
+    # Convert faces
+    for fc in f_list:
+        half_edge = f_list[fc].half_edge
+        v1, v2, v3 = he_list[half_edge].origin, he_list[half_edge].end_vertex, he_list[he_list[half_edge].next].end_vertex
+        faces.append([int(v1[1:]), int(v2[1:]), int(v3[1:]) ])
+
+    # Convert lists to numpy arrays
+    vertices = np.array(vertices)
+    faces = np.array(faces)
+
+    # Create trimesh
+    mesh = trimesh.Trimesh(vertices=vertices, faces=faces)
+
+    return mesh
+
+
 
 
 
 if __name__ == '__main__':
     # Load mesh and print information
     # mesh = trimesh.load_mesh('assets/cube.obj')
-    mesh = trimesh.creation.box(extents=[1, 1, 1])
+    mesh = trimesh.creation.box(extents=[2, 2, 2])
     print(f'Mesh Info: {mesh}')
     
     # apply loop subdivision over the loaded mesh
-    mesh_subdivided = mesh.subdivide_loop(iterations=1)
+    # mesh_subdivided = mesh.subdivide_loop(iterations=1)
 
     
     print("Vertices :", mesh.vertices)
@@ -344,26 +366,40 @@ if __name__ == '__main__':
 
     print("\n Half Edge List ::\n", half_edge_list)
 
-    
-    print(" \n Faces List : ")
+    print(" \n Faces List : \n ", faces_list)
 
     print("\n Vertices List \n",vertices_list)
 
-   
-
-    # TODO: implement your own loop subdivision here
-    new_half_edge_list, new_vertices_list, new_face_list = subdivision_loop(mesh, vertices_list, half_edge_list, faces_list, iterations=2)
     
-    print("\n New Vertices List \n",new_vertices_list)
-    print("\n New Half Edge List \n",new_half_edge_list)
+
+    # # TODO: implement your own loop subdivision here
+    new_half_edge_list, new_vertices_list, new_face_list = subdivision_loop(mesh, vertices_list, half_edge_list, faces_list, iterations=3)
+    
+    # print("\n New Vertices List \n",new_vertices_list)
+    # print("\n New Half Edge List \n",new_half_edge_list)
+
+    
+
+    uniq_edges = set([])
+    for e in new_half_edge_list:
+        if f"{new_half_edge_list[e].origin}_{new_half_edge_list[e].end_vertex}" in uniq_edges:
+            print(f"{new_half_edge_list[e].origin}_{new_half_edge_list[e].end_vertex}" + " is repeated ")
+        uniq_edges.add(f"{new_half_edge_list[e].origin}_{new_half_edge_list[e].end_vertex}")
+
+    print(len(uniq_edges))
+    print(len(new_vertices_list),len(new_half_edge_list), len(new_face_list))
    
-   
-   
-   # Define the filename for the output OBJ file
+    # Define the filename for the output OBJ file
     output_obj_filename = "output.obj"
    
-    # write_obj_file(new_vertices_list, new_face_list, output_obj_filename)
-   
+    # Call the function to create a Trimesh object
+    print(mesh.faces)
+
+    n_mesh = create_trimesh(v_list=new_vertices_list, f_list=new_face_list, he_list=new_half_edge_list )
+    
+    print(n_mesh.faces)
+    n_mesh.show()
+    n_mesh.export('cube_subdivided1.obj')
    
     # print the new mesh information and save the mesh
     # print(f'Subdivided Mesh Info: {mesh_subdivided}')
