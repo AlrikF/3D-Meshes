@@ -630,7 +630,7 @@ if __name__ == '__main__':
     # actual_mesh_decimated = mesh.simplify_quadric_decimation(8)
     
     # # TODO: implement your own quadratic error mesh decimation here
-    simplify_quadric_error(mesh, vertices_list, half_edge_list, faces_list, face_count=8)
+    simplify_quadric_error(mesh, vertices_list, half_edge_list, faces_list, face_count=7)
 
     mesh_decimated = create_trimesh(v_list=vertices_list, f_list=faces_list, he_list=half_edge_list )
     print(faces_list)
