@@ -12,3 +12,4 @@ code ./ # open this folder via vscode locally
 # open and right click on the index.html
 # select "Open With Live Server" to run the code over localhost.
 ```
+

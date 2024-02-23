@@ -118,7 +118,7 @@ def plot_half_edge(new_half_edge_list, new_vertices_list):
         org_coords, end_coords = new_vertices_list[org].coordinates, new_vertices_list[end].coordinates
         
         
-        print(f"Org: {org}, End {end}, {org_coords}, {end_coords}")
+        # print(f"Org: {org}, End {end}, {org_coords}, {end_coords}")
         ax.plot([org_coords[0], end_coords[0]], [org_coords[1], end_coords[1]], [org_coords[2], end_coords[2]], color='b')
 
     # Set labels and show plot
@@ -321,7 +321,7 @@ def calculate_normal(face_name,face_list,half_edge_list,vertices_list):
     v1_v3_vector = vertices_list[v3].coordinates - vertices_list[v1].coordinates
 
     normal  = np.cross(v1_v2_vector, v1_v3_vector)
-    print("Normal",normal)
+    # print("Normal",normal)
     magnitude = np.linalg.norm(normal)  # Calculate the magnitude of the vector
     if magnitude != 0:
         normal = normal/magnitude  # If the vector is the zero vector, return the same vector
@@ -330,7 +330,7 @@ def calculate_normal(face_name,face_list,half_edge_list,vertices_list):
     face_list[face_name].normal = np.append(normal, -d) 
 
 
-def calculate_point_error(vertex_name,face_list,half_edge_list,vertices_list, debug =True):
+def calculate_point_error(vertex_name,face_list,half_edge_list,vertices_list, debug =False):
     curr_edge=vertices_list[vertex_name].incident_edge
     print("Curr edge",curr_edge)
     visited_faces=set([])
@@ -346,13 +346,12 @@ def calculate_point_error(vertex_name,face_list,half_edge_list,vertices_list, de
         p = np.expand_dims(p, axis=1)
         # print("K:",type(p), p, np.dot(p, p.T) )
         Q+= np.dot(p, p.T)    
-        print(face_list[ face])
+        # print(face_list[ face])
 
         curr_edge = half_edge_list[half_edge_list[curr_edge].prev].twin_name
         face = half_edge_list[curr_edge].incident_face
 
-    matrix_v = np.append(vertices_list[vertex_name].coordinates,1)
-    print("Matrix V",matrix_v)
+    
 
     vertices_list[vertex_name].Q_error = Q
 
@@ -376,10 +375,10 @@ def least_pair_error(half_edge_list, vertices_list):
             column_vector = np.array([[0],[0],[0],[1]])
             v_bar = np.dot(Q_bar_inverse, column_vector)
             v_bar = v_bar.flatten() 
-            print("\n  INVERTIBLE \n\n ",v_bar)
+            # print("\n  INVERTIBLE \n\n ",v_bar)
         else:
             ### Check if only midpoint is the optimal position
-            print("\n  NOT INVERTIBLE \n\n ")
+            # print("\n  NOT INVERTIBLE \n\n ")
             min_error =np.inf
             v_mid = (vertices_list[v1].coordinates + vertices_list[v2].coordinates)/2
             v_bar=v_mid
@@ -396,22 +395,21 @@ def least_pair_error(half_edge_list, vertices_list):
         
         heappush(error_heap, [pair_error, edge_name, v_bar[:-1]/v_bar[-1]])
 
-    print("Error Heap",error_heap)
     # Pop the edge with the smallest error
     pair_error, edge_name, v_bar = heappop(error_heap)
     # print("\n \n \n \n Pair Error",pair_error, edge_name, v_bar)
     return pair_error, edge_name, v_bar
 
-def collapse_edge(edge_name, v_bar, half_edge_list, vertices_list, faces_list, debug =True):
+def collapse_edge(edge_name, v_bar, half_edge_list, vertices_list, faces_list, debug =False):
     # Get the vertices of the edge
     v1 = half_edge_list[edge_name].origin
     v2 = half_edge_list[edge_name].end_vertex
-    print(type(vertices_list.keys()))
+    # print(type(vertices_list.keys()))
     last_key = int((list(vertices_list.keys())[-1])[1:]) + 1
 
     new_node_name = f"v{last_key}"
     # Update the coordinates of v1 to be the optimal position
-    print("Vbar: ", v_bar)
+    # print("Vbar: ", v_bar)
     vertices_list[new_node_name] = Vertice_Edge_Node(new_node_name, v_bar) 
 
     del_edge1 = edge_name
@@ -464,7 +462,7 @@ def collapse_edge(edge_name, v_bar, half_edge_list, vertices_list, faces_list, d
         half_edge_list[prev_edge].end_vertex = new_node_name
         if debug:
             print(f"Changing vertex for {curr_edge, prev_edge}")
-            print("iterating ")
+            
 
         curr_edge= half_edge_list[prev_edge].twin_name
 
@@ -632,7 +630,7 @@ if __name__ == '__main__':
     # actual_mesh_decimated = mesh.simplify_quadric_decimation(8)
     
     # # TODO: implement your own quadratic error mesh decimation here
-    simplify_quadric_error(mesh, vertices_list, half_edge_list, faces_list, face_count=10)
+    simplify_quadric_error(mesh, vertices_list, half_edge_list, faces_list, face_count=8)
 
     mesh_decimated = create_trimesh(v_list=vertices_list, f_list=faces_list, he_list=half_edge_list )
     print(faces_list)
