@@ -105,7 +105,7 @@ def create_half_edge(mesh, vertices_list ,half_edge_list, faces_list):
                     half_edge_list[twin_he_name].twin_name = he_name 
                     break
 
-def plot_half_edge(new_half_edge_list, new_vertices_list):
+def plot_half_edge(new_half_edge_list, new_vertices_list, deleted_vertices = None):
 
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
@@ -128,9 +128,10 @@ def plot_half_edge(new_half_edge_list, new_vertices_list):
           
 
     # Annotating vertices
-    for vertex_name in vertices_list:
-        ax.scatter(vertices_list[vertex_name].coordinates[0], vertices_list[vertex_name].coordinates[1], vertices_list[vertex_name].coordinates[2], color='g')
-        ax.text(vertices_list[vertex_name].coordinates[0], vertices_list[vertex_name].coordinates[1], vertices_list[vertex_name].coordinates[2], vertex_name)
+    if deleted_vertices is not None:
+        for vertex_name in deleted_vertices:
+            ax.scatter(deleted_vertices[vertex_name].coordinates[0], deleted_vertices[vertex_name].coordinates[1],deleted_vertices[vertex_name].coordinates[2], color='g')
+            ax.text(deleted_vertices[vertex_name].coordinates[0], deleted_vertices[vertex_name].coordinates[1], deleted_vertices[vertex_name].coordinates[2], vertex_name)
 
         
     for vertex_name in new_vertices_list:
@@ -355,7 +356,7 @@ def calculate_point_error(vertex_name,face_list,half_edge_list,vertices_list, de
 
     vertices_list[vertex_name].Q_error = Q
 
-def least_pair_error(half_edge_list, vertices_list):
+def least_pair_error(half_edge_list, vertices_list, preserve_vertices = False):
 
     error_heap = [] 
     heapify(error_heap)
@@ -369,26 +370,36 @@ def least_pair_error(half_edge_list, vertices_list):
         # print("Q_bar",der_q)
         determinant = np.linalg.det(der_q)
         # If the determinant is not zero, calculate the optimal position of the vertex as matrix is invertible
-        if determinant != 0:
-            
-            Q_bar_inverse = np.linalg.inv(der_q)
-            column_vector = np.array([[0],[0],[0],[1]])
-            v_bar = np.dot(Q_bar_inverse, column_vector)
-            v_bar = v_bar.flatten() 
-            # print("\n  INVERTIBLE \n\n ",v_bar)
-        else:
-            ### Check if only midpoint is the optimal position
-            # print("\n  NOT INVERTIBLE \n\n ")
+        if preserve_vertices:
             min_error =np.inf
-            v_mid = (vertices_list[v1].coordinates + vertices_list[v2].coordinates)/2
-            v_bar=v_mid
             
-            for coord in [vertices_list[v1].coordinates,vertices_list[v2].coordinates,v_mid] :
+            for coord in [vertices_list[v1].coordinates,vertices_list[v2].coordinates] :
                 coord=np.append(coord,1)
                 error = np.dot(np.dot(coord.T, Q_bar), coord)
                 if error<min_error:
                     min_error =error
                     v_bar=coord
+        else:
+            if determinant != 0:
+                
+                Q_bar_inverse = np.linalg.inv(der_q)
+                column_vector = np.array([[0],[0],[0],[1]])
+                v_bar = np.dot(Q_bar_inverse, column_vector)
+                v_bar = v_bar.flatten() 
+                # print("\n  INVERTIBLE \n\n ",v_bar)
+            else:
+                ### Check if only midpoint is the optimal position
+                # print("\n  NOT INVERTIBLE \n\n ")
+                min_error =np.inf
+                v_mid = (vertices_list[v1].coordinates + vertices_list[v2].coordinates)/2
+                v_bar=v_mid
+                
+                for coord in [vertices_list[v1].coordinates,vertices_list[v2].coordinates,v_mid] :
+                    coord=np.append(coord,1)
+                    error = np.dot(np.dot(coord.T, Q_bar), coord)
+                    if error<min_error:
+                        min_error =error
+                        v_bar=coord
             
       
         pair_error = np.dot(np.dot(v_bar.T, Q_bar), v_bar)
@@ -400,7 +411,7 @@ def least_pair_error(half_edge_list, vertices_list):
     # print("\n \n \n \n Pair Error",pair_error, edge_name, v_bar)
     return pair_error, edge_name, v_bar
 
-def collapse_edge(edge_name, v_bar, half_edge_list, vertices_list, faces_list, debug =False):
+def collapse_edge(edge_name, v_bar, half_edge_list, vertices_list, faces_list, deleted_vertices ,debug =False):
     # Get the vertices of the edge
     v1 = half_edge_list[edge_name].origin
     v2 = half_edge_list[edge_name].end_vertex
@@ -472,6 +483,8 @@ def collapse_edge(edge_name, v_bar, half_edge_list, vertices_list, faces_list, d
     del faces_list[del_face1]
     del faces_list[del_face2]
 
+    deleted_vertices[v1]=copy.deepcopy(vertices_list[v1])
+    deleted_vertices[v2]=copy.deepcopy(vertices_list[v2])
     del vertices_list[v1]
     del vertices_list[v2]
 
@@ -482,7 +495,7 @@ def collapse_edge(edge_name, v_bar, half_edge_list, vertices_list, faces_list, d
 
 
 
-def simplify_quadric_error(mesh,vertices_list,half_edge_list, faces_list,  face_count=1):
+def simplify_quadric_error(mesh,vertices_list,half_edge_list, faces_list, deleted_vertices , face_count=1):
     """
     Apply quadratic error mesh decimation to the input mesh until the target face count is reached.
     :param mesh: input mesh
@@ -509,12 +522,13 @@ def simplify_quadric_error(mesh,vertices_list,half_edge_list, faces_list,  face_
 
         pair_error, edge_name, v_bar =  least_pair_error(half_edge_list, vertices_list )
         print(f" \n Removing edge : {half_edge_list[edge_name]} "  )
-        collapse_edge(edge_name, v_bar, half_edge_list, vertices_list, faces_list)
+        collapse_edge(edge_name, v_bar, half_edge_list, vertices_list, faces_list, deleted_vertices)
 
         print(half_edge_list)
         print(vertices_list)
 
-    plot_half_edge(half_edge_list,vertices_list)
+    print("Deleted vertices",deleted_vertices)
+    plot_half_edge(half_edge_list,vertices_list, deleted_vertices)
 
 
     return 
@@ -570,6 +584,8 @@ if __name__ == '__main__':
 
     faces_list = {}
 
+    
+
     create_half_edge(mesh=mesh,vertices_list=vertices_list, half_edge_list=half_edge_list, faces_list=faces_list)
 
     # print("\n Half Edge List ::\n", half_edge_list)
@@ -617,6 +633,7 @@ if __name__ == '__main__':
     half_edge_list={}
 
     faces_list = {}
+    deleted_vertices = {}
 
     create_half_edge(mesh=mesh,vertices_list=vertices_list, half_edge_list=half_edge_list, faces_list=faces_list)
 
@@ -630,7 +647,7 @@ if __name__ == '__main__':
     # actual_mesh_decimated = mesh.simplify_quadric_decimation(8)
     
     # # TODO: implement your own quadratic error mesh decimation here
-    simplify_quadric_error(mesh, vertices_list, half_edge_list, faces_list, face_count=7)
+    simplify_quadric_error(mesh, vertices_list, half_edge_list, faces_list,deleted_vertices , face_count=8)
 
     mesh_decimated = create_trimesh(v_list=vertices_list, f_list=faces_list, he_list=half_edge_list )
     print(faces_list)
@@ -639,4 +656,4 @@ if __name__ == '__main__':
     mesh_decimated.export('assets/assignment1/cube_decimated.obj')
     # actual_mesh_decimated.show()
     mesh_decimated.show()
-    mesh_decimated.export('cube_decimated.obj')
+    # mesh_decimated.export('cube_decimated.obj')

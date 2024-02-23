@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSCI599</title>
+    <style>
+
+    </style>
+</head>
+<body>
+    <h1>CSCI599</h1>
+    
+    <h3>Half Edge Data Structure Implementation:</h3>
+    <p>This mainly consists of three components:</p>
+    <ul>
+        <li>Vertices list consist of a dictionary of nodes identified by a vertice name.</li>
+        <li>Vertice_Edge_Node consists of:</li>
+        <ul>
+            <li>Unique name to identify each vertice.</li>
+            <li>The coordinates of a point in [x, y ,z] format.</li>
+            <li>A half edge originating from the current vertice as its origin.</li>
+        </ul>
+        <li>Face List consists of a dictionary of all the faces identified by a unique face name.</li>
+        <li>Face Node consists of:</li>
+        <ul>
+            <li>Face name to uniquely identify the face.</li>
+            <li>Name of any one of the three half edges that make up the triangle that contains the face.</li>
+            <li>Normal of the face.</li>
+        </ul>
+        <li>Half edge list consists of a dictionary of edges identified by a unique edge name.</li>
+        <li>Each Half Edge Node contains:</li>
+        <ul>
+            <li>Name identifying a unique half edge.</li>
+            <li>The point at which the half edge originates since it is directed.</li>
+            <li>The point at which the half edge ends.</li>
+            <li>The twin of the half edge having the same points but directed in the opposite direction.</li>
+            <li>The name of the face that contains the half edge.</li>
+            <li>Name of the next half edge of the face.</li>
+            <li>Name of the previous half edge of the face.</li>
+        </ul>
+    </ul>
+    <h4>Algorithm of half edge creation:</h4>
+    <pre><code>Create the vertices for the vertices list from the trimesh vertices  
+Read the triangles from trimesh and create the half edges and faces using the points in the mesh triangles 
+Connect the half edges to the twin by checking the origin and end vertices 
+    </code></pre>
+    <p>Once we create Faces list, Vertices list, and Half edge List.</p>
+    <p>Algorithm for subdivision loop:</p>
+    <pre><code>Repeat the following steps for the number of iterations 
+    Initialize new_halfedge_list , new_vertices_list, new_face_list
+
+    Iterate through all the edges and compute the odd vertice on each edge 
+    Iterate through the vertices and compute the even vertices 
+    Adjust the original vertices to the new even vertices and construct new faces and half edges by joining all the odd vertices in a face together. This will result in each face resulting in four more faces 
+    Discard the previous halfedges and compute and connect the new twins in the new_halfedge list 
+    Discard the old faces and copy the new_vertices to the old vertices_list
+
+Plot and check the final mesh 
+    </code></pre>
+    <h4>Algorithm for decimation:</h4>
+    <pre><code>Calculate the normals for each of the faces 
+Initialize a while loop where if curr no of faces is greater than required faces we enter the loop 
+    Calculate the error for each point by computing K matrix and summing it up for all faces to get Q matrix 
+    Iterate through all the edges and compute the new vertex if we collapse the edge and the corresponding error and push it into a heap 
+    Pop the edge with the least error delete the vertices, half edges and faces associated with the points and join the half edges of the remaining faces to get the correct twin half edge 
+
+Plot and check the final decimated mesh 
+    
+
+    </code></pre>
+
+    <h4>Time Complexity of Algorithms</h4>
+
+    <h5>Loop Subdivision Time Complexity:</h5>
+    <ul>
+        <li>Half-Edge Data Structure Construction: O(V + E^2 + F)</li>
+        <li>Odd Vertex Computation: O(E)</li>
+        <li>Even Vertex Computation: O(V*E)</li>
+        <li>New Face Creation: O(F)</li>
+        <li>Twin Half-Edge Connection: O(E^2)</li>
+    </ul>
+
+    <p> So the overall time complexity of the Loop Subdivision algorithm is O(I *(V*E + E^2 + F)) = O(I*(V*E +E^2)). where I is the number of iterations. </p>
+
+    <h3>Mesh Subdivision Iterations</h3>
+
+    <h5>Iteration 1</h5>
+    <img src="../assets/images/Subdivided_1.png"  width="400">
+
+    <h5>Iteration 2</h5>
+    <img src="../assets/images/Subdivided_2.png"  width="400">
+
+
+
+
+
+    <h5>Quadratic Error Metrics Time Complexity:</h5>
+    <ul>
+        <li>Normal Calculation: O(F)</li>
+        <li>Point Error Calculation: O(V*F)</li>
+        <li>Least Pair Error Calculation: O(E log E)</li>
+        <li>Edge Collapse: O(1)</li>
+    </ul>
+
+    <p> So the overall time complexity of the Loop Subdivision algorithm is O(I*(V*F + E Log E + F)) Where I is each iteration of the loop for reduction of faces     </p>
+
+    <h3>Quadratic error metrics faces </h3>
+
+
+    <h5>Faces 10</h5>
+    <img src="../assets/images/Decimated_10.png"  width="400">
+
+    <h5>Faces 9</h5>
+    <img src="../assets/images/Decimated_8.png"  width="400">
+    
+    <h5>Faces 8</h5>
+    <img src="../assets/images/Decimated_8.png"  width="400">
+
+    <h5>Faces 6</h5>
+    <img src="../assets/images/Decimated_6.png"  width="400">
+
+    <h5>Faces 4</h5>
+    <img src="../assets/images/Decimated_4.png"  width="400">
+
+    <h4>Extra Credit ::</h4>
+
+    Yes we can preserve the original vertices after decimation
+
+    <h3>Preserve Vertices </h3>
+
+    <h5>Faces 10</h5>
+    <img src="../assets/images/Preserve10.png"  width="400">
+
+    <h5>Faces 8</h5>
+    <img src="../assets/images/Preserve_8.png"  width="400">
+
+    <h5>Faces 6</h5>
+    <img src="../assets/images/Preserve_6.png"  width="400">
+
+    <h5>Faces 5</h5>
+    <img src="../assets/images/Preserve_5.png"  width="400">
+
+
+</body>
+</html>
