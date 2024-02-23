@@ -623,7 +623,7 @@ if __name__ == '__main__':
    
     #print the new mesh information and save the mesh
     print(f'Subdivided Mesh Info: {mesh_subdivided}')
-    mesh_subdivided.export('assets/assignment1/cube_subdivided.obj')
+    mesh_subdivided.export('./assets/assignment1/cube_subdivided.obj')
 
 
 
@@ -653,7 +653,7 @@ if __name__ == '__main__':
     print(faces_list)
     # # print the new mesh information and save the mesh
     print(f'Decimated Mesh Info: {mesh_decimated}')
-    mesh_decimated.export('assets/assignment1/cube_decimated.obj')
+    mesh_decimated.export('./assets/assignment1/cube_decimated.obj')
     # actual_mesh_decimated.show()
     mesh_decimated.show()
     # mesh_decimated.export('cube_decimated.obj')

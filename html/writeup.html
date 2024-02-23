@@ -46,7 +46,9 @@ Read the triangles from trimesh and create the half edges and faces using the po
 Connect the half edges to the twin by checking the origin and end vertices 
     </code></pre>
     <p>Once we create Faces list, Vertices list, and Half edge List.</p>
-    <p>Algorithm for subdivision loop:</p>
+    
+    
+    <h4>Algorithm for subdivision loop:</h4>
     <pre><code>Repeat the following steps for the number of iterations 
     Initialize new_halfedge_list , new_vertices_list, new_face_list
 
@@ -58,6 +60,7 @@ Connect the half edges to the twin by checking the origin and end vertices
 
 Plot and check the final mesh 
     </code></pre>
+    
     <h4>Algorithm for decimation:</h4>
     <pre><code>Calculate the normals for each of the faces 
 Initialize a while loop where if curr no of faces is greater than required faces we enter the loop 
