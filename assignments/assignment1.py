@@ -182,7 +182,7 @@ def compute_even_vertices(mesh,half_edge_list,vertices_list, new_vertices_list, 
 
         beta=3/16.0
         if len(neighbours)>3:
-            beta=3/(8*len(neighbours))
+            beta=1/len(neighbours)*(5/8.0 - (3/8.0 + 1/4.0 * np.cos(2*np.pi/len(neighbours)))**2)
         elif len(neighbours)<3:
             raise Warning(f"Too few neighbours for {vertex_name} :: {neighbours}")
 
@@ -321,6 +321,7 @@ def calculate_normal(face_name,face_list,half_edge_list,vertices_list):
     v1_v3_vector = vertices_list[v3].coordinates - vertices_list[v1].coordinates
 
     normal  = np.cross(v1_v2_vector, v1_v3_vector)
+    print("Normal",normal)
     magnitude = np.linalg.norm(normal)  # Calculate the magnitude of the vector
     if magnitude != 0:
         normal = normal/magnitude  # If the vector is the zero vector, return the same vector
@@ -571,7 +572,7 @@ if __name__ == '__main__':
 
     faces_list = {}
 
-    # create_half_edge(mesh=mesh,vertices_list=vertices_list, half_edge_list=half_edge_list, faces_list=faces_list)
+    create_half_edge(mesh=mesh,vertices_list=vertices_list, half_edge_list=half_edge_list, faces_list=faces_list)
 
     # print("\n Half Edge List ::\n", half_edge_list)
 
@@ -581,34 +582,34 @@ if __name__ == '__main__':
 
     
 
-    # # # TODO: implement your own loop subdivision here
-    # new_half_edge_list, new_vertices_list, new_face_list = subdivision_loop(mesh, vertices_list, half_edge_list, faces_list, iterations=3)
+    # # TODO: implement your own loop subdivision here
+    new_half_edge_list, new_vertices_list, new_face_list = subdivision_loop(mesh, vertices_list, half_edge_list, faces_list, iterations=3)
     
    
     
 
-    # uniq_edges = set([])
-    # for e in new_half_edge_list:
-    #     if f"{new_half_edge_list[e].origin}_{new_half_edge_list[e].end_vertex}" in uniq_edges:
-    #         print(f"{new_half_edge_list[e].origin}_{new_half_edge_list[e].end_vertex}" + " is repeated ")
-    #     uniq_edges.add(f"{new_half_edge_list[e].origin}_{new_half_edge_list[e].end_vertex}")
+    uniq_edges = set([])
+    for e in new_half_edge_list:
+        if f"{new_half_edge_list[e].origin}_{new_half_edge_list[e].end_vertex}" in uniq_edges:
+            print(f"{new_half_edge_list[e].origin}_{new_half_edge_list[e].end_vertex}" + " is repeated ")
+        uniq_edges.add(f"{new_half_edge_list[e].origin}_{new_half_edge_list[e].end_vertex}")
 
-    # print(len(uniq_edges))
-    # print(len(new_vertices_list),len(new_half_edge_list), len(new_face_list))
+    print(len(uniq_edges))
+    print(len(new_vertices_list),len(new_half_edge_list), len(new_face_list))
    
-    # # Define the filename for the output OBJ file
-    # output_obj_filename = "output.obj"
+    # Define the filename for the output OBJ file
+    output_obj_filename = "output.obj"
    
-    # # Call the function to create a Trimesh object
-    # print(mesh.faces)
+    # Call the function to create a Trimesh object
+    print(mesh.faces)
 
-    # mesh_subdivided = create_trimesh(v_list=new_vertices_list, f_list=new_face_list, he_list=new_half_edge_list )
+    mesh_subdivided = create_trimesh(v_list=new_vertices_list, f_list=new_face_list, he_list=new_half_edge_list )
     
     
    
-    # #print the new mesh information and save the mesh
-    # print(f'Subdivided Mesh Info: {mesh_subdivided}')
-    # mesh_subdivided.export('assets/assignment1/cube_subdivided.obj')
+    #print the new mesh information and save the mesh
+    print(f'Subdivided Mesh Info: {mesh_subdivided}')
+    mesh_subdivided.export('assets/assignment1/cube_subdivided.obj')
 
 
 
@@ -634,10 +635,10 @@ if __name__ == '__main__':
     simplify_quadric_error(mesh, vertices_list, half_edge_list, faces_list, face_count=10)
 
     mesh_decimated = create_trimesh(v_list=vertices_list, f_list=faces_list, he_list=half_edge_list )
-    
+    print(faces_list)
     # # print the new mesh information and save the mesh
     print(f'Decimated Mesh Info: {mesh_decimated}')
     mesh_decimated.export('assets/assignment1/cube_decimated.obj')
     # actual_mesh_decimated.show()
-    # mesh_decimated.show()
-    # mesh_decimated.export('cube_decimated.obj')
+    mesh_decimated.show()
+    mesh_decimated.export('cube_decimated.obj')
